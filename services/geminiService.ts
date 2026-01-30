@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { RecipeResponse } from "../types";
 
@@ -94,10 +93,13 @@ export const generateRecipeImage = async (recipeName: string, description: strin
   });
 
   const candidates = response.candidates;
-  if (candidates && candidates.length > 0 && candidates[0].content && candidates[0].content.parts) {
-    for (const part of candidates[0].content.parts) {
-      if (part.inlineData) {
-        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+  if (candidates && candidates.length > 0) {
+    const firstCandidate = candidates[0];
+    if (firstCandidate && firstCandidate.content && firstCandidate.content.parts) {
+      for (const part of firstCandidate.content.parts) {
+        if (part && part.inlineData) {
+          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        }
       }
     }
   }
