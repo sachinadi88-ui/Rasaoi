@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Recipe } from '../types';
 
@@ -10,38 +9,26 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-orange-50 transition-all duration-300 hover:shadow-2xl flex flex-col">
-      <div className="relative h-56 sm:h-48 bg-gray-100 overflow-hidden group">
-        {recipe.imageUrl ? (
-          <img 
-            src={recipe.imageUrl} 
-            alt={recipe.recipeName}
-            className="w-full h-full object-cover transition-all duration-700 group-hover:scale-110 animate-fadeIn"
-          />
-        ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 animate-pulse">
-            <i className="fa-solid fa-image text-gray-300 text-4xl mb-2"></i>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Generating Visual...</span>
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60"></div>
-        <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg">
-          {recipe.difficulty}
-        </div>
-        <div className="absolute bottom-4 left-4 text-white">
-           <div className="flex items-center gap-3 text-xs font-bold">
-              <span className="flex items-center gap-1"><i className="fa-solid fa-clock"></i> {recipe.cookTime}</span>
-              <span className="flex items-center gap-1"><i className="fa-solid fa-users"></i> {recipe.servings}</span>
-           </div>
-        </div>
-      </div>
+    <div className="bg-white rounded-[2rem] shadow-xl overflow-hidden border border-orange-50 transition-all duration-300 hover:shadow-2xl flex flex-col group">
+      {/* Header Accent Bar */}
+      <div className="h-3 saffron-gradient w-full"></div>
       
-      <div className="p-6 flex-1 flex flex-col">
+      <div className="p-8 flex-1 flex flex-col">
+        <div className="flex justify-between items-start mb-4">
+          <div className="bg-orange-500 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm">
+            {recipe.difficulty}
+          </div>
+          <div className="flex items-center gap-3 text-orange-400 text-xs font-bold">
+            <span className="flex items-center gap-1"><i className="fa-solid fa-clock"></i> {recipe.cookTime}</span>
+            <span className="flex items-center gap-1"><i className="fa-solid fa-users"></i> {recipe.servings}</span>
+          </div>
+        </div>
+
         <h3 className="text-2xl font-black text-gray-800 leading-tight mb-2 group-hover:text-orange-600 transition-colors">
           {recipe.recipeName}
         </h3>
         
-        <p className="text-gray-500 text-sm mb-6 leading-relaxed flex-1 italic">
+        <p className="text-gray-500 text-sm mb-6 leading-relaxed flex-1 italic border-l-4 border-orange-100 pl-4 py-1">
           "{recipe.description}"
         </p>
 
@@ -56,9 +43,9 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe }) => {
         {!isExpanded ? (
           <button 
             onClick={() => setIsExpanded(true)}
-            className="w-full py-4 bg-gray-50 hover:bg-orange-500 hover:text-white text-orange-600 font-bold rounded-2xl transition-all flex items-center justify-center gap-2 group active:scale-95"
+            className="w-full py-4 bg-gray-50 hover:bg-orange-500 hover:text-white text-orange-600 font-bold rounded-2xl transition-all flex items-center justify-center gap-2 group/btn active:scale-95"
           >
-            Start Cooking <i className="fa-solid fa-arrow-right-long group-hover:translate-x-1 transition-transform"></i>
+            Start Cooking <i className="fa-solid fa-arrow-right-long group-hover/btn:translate-x-1 transition-transform"></i>
           </button>
         ) : (
           <div className="space-y-8 animate-fadeIn pt-2">

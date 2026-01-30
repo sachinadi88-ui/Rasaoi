@@ -1,4 +1,3 @@
-
 export interface Ingredient {
   item: string;
   amount: string;
@@ -15,7 +14,6 @@ export interface Recipe {
   steps: string[];
   servings: number;
   tags: string[];
-  imageUrl?: string;
 }
 
 export interface RecipeResponse {

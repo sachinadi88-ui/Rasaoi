@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { generateLeftoverRecipes, generateRecipeImage } from './services/geminiService';
+import { generateLeftoverRecipes } from './services/geminiService';
 import { Recipe } from './types';
 import RecipeCard from './components/RecipeCard';
 
@@ -47,16 +47,6 @@ const App: React.FC = () => {
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 150);
-
-      // Trigger relevant image generation sequentially to avoid rate limits
-      for (const recipe of result.recipes) {
-        try {
-          const imageUrl = await generateRecipeImage(recipe.recipeName, recipe.description);
-          setRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, imageUrl } : r));
-        } catch (imgErr) {
-          console.error(`Failed to generate image for ${recipe.recipeName}:`, imgErr);
-        }
-      }
 
     } catch (err: any) {
       setError(err.message || "The chef is busy. Try again!");
