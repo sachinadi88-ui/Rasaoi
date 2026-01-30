@@ -11,78 +11,77 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
   Provide detailed instructions, preparation time, and tags for each recipe.
   ONLY provide Indian recipes.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: prompt,
-    config: {
-      systemInstruction: "You are a world-class Indian Chef and 'Zero Waste' cooking expert. Your specialty is creating delicious, traditional, and modern Indian dishes using leftovers while maintaining authentic flavors.",
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          recipes: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                id: { type: Type.STRING },
-                recipeName: { type: Type.STRING },
-                description: { type: Type.STRING },
-                prepTime: { type: Type.STRING },
-                cookTime: { type: Type.STRING },
-                difficulty: { 
-                  type: Type.STRING,
-                  enum: ['Easy', 'Medium', 'Hard']
-                },
-                ingredients: {
-                  type: Type.ARRAY,
-                  items: {
-                    type: Type.OBJECT,
-                    properties: {
-                      item: { type: Type.STRING },
-                      amount: { type: Type.STRING }
-                    },
-                    required: ["item", "amount"]
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: {
+        systemInstruction: "You are a world-class Indian Chef and 'Zero Waste' cooking expert. Your specialty is creating delicious, traditional, and modern Indian dishes using leftovers while maintaining authentic flavors.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            recipes: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  id: { type: Type.STRING },
+                  recipeName: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  prepTime: { type: Type.STRING },
+                  cookTime: { type: Type.STRING },
+                  difficulty: { 
+                    type: Type.STRING,
+                    enum: ['Easy', 'Medium', 'Hard']
+                  },
+                  ingredients: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        item: { type: Type.STRING },
+                        amount: { type: Type.STRING }
+                      },
+                      required: ["item", "amount"]
+                    }
+                  },
+                  steps: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING }
+                  },
+                  servings: { type: Type.NUMBER },
+                  tags: {
+                    type: Type.ARRAY,
+                    items: { type: Type.STRING }
                   }
                 },
-                steps: {
-                  type: Type.ARRAY,
-                  items: { type: Type.STRING }
-                },
-                servings: { type: Type.NUMBER },
-                tags: {
-                  type: Type.ARRAY,
-                  items: { type: Type.STRING }
-                }
-              },
-              required: ["id", "recipeName", "description", "prepTime", "cookTime", "difficulty", "ingredients", "steps", "servings", "tags"]
+                required: ["id", "recipeName", "description", "prepTime", "cookTime", "difficulty", "ingredients", "steps", "servings", "tags"]
+              }
             }
-          }
-        },
-        required: ["recipes"]
-      }
-    },
-  });
+          },
+          required: ["recipes"]
+        }
+      },
+    });
 
-  const responseText = response.text;
-  if (!responseText) {
-    throw new Error("The chef didn't return any recipes. Please try again.");
-  }
+    const responseText = response.text;
+    if (!responseText) {
+      throw new Error("Empty response from AI Chef.");
+    }
 
-  try {
-    const data = JSON.parse(responseText.trim());
-    return data as RecipeResponse;
+    return JSON.parse(responseText.trim()) as RecipeResponse;
   } catch (error) {
-    console.error("Failed to parse Gemini response:", error);
-    throw new Error("Formatting error in the recipes. Please try again.");
+    console.error("Recipe generation failed:", error);
+    throw new Error("The Rasoi Revive chef is busy. Please try again in a moment.");
   }
 };
 
 export const generateRecipeImage = async (recipeName: string, description: string): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
 
-  // Simplified prompt to avoid safety filter triggers while maintaining descriptive quality
-  const prompt = `A professional food photography shot of the Indian dish "${recipeName}". ${description}. High quality, appetizing, served on traditional Indian tableware, warm lighting.`;
+  // Safety-optimized, highly descriptive food photography prompt
+  const prompt = `Gourmet food photography of the Indian dish "${recipeName}". ${description}. Beautifully plated on a rustic Indian plate, natural soft window lighting, cinematic depth of field, vibrant colors, 4k resolution.`;
   
   try {
     const response = await ai.models.generateContent({
@@ -97,26 +96,30 @@ export const generateRecipeImage = async (recipeName: string, description: strin
       }
     });
 
-    if (response && response.candidates && response.candidates.length > 0) {
-      const candidate = response.candidates[0];
-      
-      if (candidate.finishReason === 'SAFETY') {
-        console.warn(`Image generation for ${recipeName} was blocked by safety filters.`);
-        throw new Error("Safety Block");
-      }
+    if (!response.candidates || response.candidates.length === 0) {
+      throw new Error("No candidates returned from image model.");
+    }
 
-      if (candidate.content && candidate.content.parts) {
-        for (const part of candidate.content.parts) {
-          if (part.inlineData && part.inlineData.data) {
-            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
-          }
+    const candidate = response.candidates[0];
+    
+    // Check for safety blocks which are common in production environments
+    if (candidate.finishReason === 'SAFETY') {
+      console.warn(`Safety block triggered for recipe: ${recipeName}`);
+      throw new Error("Safety filters blocked the image.");
+    }
+
+    if (candidate.content && candidate.content.parts) {
+      for (const part of candidate.content.parts) {
+        if (part.inlineData && part.inlineData.data) {
+          const mimeType = part.inlineData.mimeType || 'image/png';
+          return `data:${mimeType};base64,${part.inlineData.data}`;
         }
       }
     }
+    
+    throw new Error("No image data found in candidate parts.");
   } catch (err) {
-    console.error(`Error in generateRecipeImage for ${recipeName}:`, err);
+    console.error(`Image generation error for ${recipeName}:`, err);
     throw err;
   }
-  
-  throw new Error("No image data returned from the model.");
 };

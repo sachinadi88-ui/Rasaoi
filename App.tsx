@@ -223,9 +223,9 @@ const App: React.FC = () => {
           <i className="fa-solid fa-leaf"></i>
         </div>
         <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">
-          Made for the modern Indian Kitchen
+          Crafted by SACHIN ADI for the modern Indian Kitchen
         </p>
-        <p className="text-gray-300 text-[10px]">&copy; 2024 Rasoi Revive • Sustainable Tasty Living</p>
+        <p className="text-gray-300 text-[10px]">&copy; 2026 Rasoi Revive • Sustainable Tasty Living</p>
       </footer>
     </div>
   );
