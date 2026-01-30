@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { generateLeftoverRecipes, generateRecipeImage } from './services/geminiService';
 import { Recipe } from './types';
@@ -49,15 +48,15 @@ const App: React.FC = () => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 150);
 
-      // Trigger relevant image generation for each recipe in background
-      result.recipes.forEach(async (recipe) => {
+      // Trigger relevant image generation sequentially to avoid rate limits
+      for (const recipe of result.recipes) {
         try {
           const imageUrl = await generateRecipeImage(recipe.recipeName, recipe.description);
           setRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, imageUrl } : r));
         } catch (imgErr) {
           console.error(`Failed to generate image for ${recipe.recipeName}:`, imgErr);
         }
-      });
+      }
 
     } catch (err: any) {
       setError(err.message || "The chef is busy. Try again!");
@@ -217,7 +216,7 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <footer className="mt-auto py-10 text-center px-6">
+      <footer className="mt-auto py-5 text-center px-6">
         <div className="flex justify-center gap-4 mb-4 text-orange-200 text-xl">
           <i className="fa-solid fa-pepper-hot"></i>
           <i className="fa-solid fa-bowl-food"></i>

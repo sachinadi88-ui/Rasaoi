@@ -1,17 +1,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { RecipeResponse } from "../types";
 
-// Fixed: Initializing GoogleGenAI client using process.env.API_KEY directly as per guidelines
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 export const generateLeftoverRecipes = async (leftovers: string[]): Promise<RecipeResponse> => {
+  const apiKey = process.env.API_KEY || "";
+  const ai = new GoogleGenAI({ apiKey });
+
   const prompt = `I have the following leftover food items: ${leftovers.join(", ")}. 
   Please suggest 3 authentic and creative Indian recipes that primarily use these leftovers. 
   You can assume standard Indian pantry staples (spices, oil, salt, onions, ginger, garlic, flour, rice, lentils) are available.
   Provide detailed instructions, preparation time, and tags for each recipe.
   ONLY provide Indian recipes.`;
 
-  // Fixed: Using the recommended model for text-based tasks
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: prompt,
@@ -65,7 +64,6 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
     },
   });
 
-  // Fixed: Accessed response.text as a property, not a method, and handled potential undefined
   const responseText = response.text;
   if (!responseText) {
     throw new Error("The chef didn't return a recipe. Please try again.");
@@ -81,9 +79,11 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
 };
 
 export const generateRecipeImage = async (recipeName: string, description: string): Promise<string> => {
-  const prompt = `A high-quality, professional food photography shot of an authentic Indian dish called "${recipeName}". ${description}. The dish should be beautifully plated on traditional Indian tableware, warm lighting, appetizing textures.`;
+  const apiKey = process.env.API_KEY || "";
+  const ai = new GoogleGenAI({ apiKey });
+
+  const prompt = `A high-quality, professional food photography shot of an authentic Indian dish called "${recipeName}". ${description}. The dish should be beautifully plated on traditional Indian tableware, warm lighting, appetizing textures. No text or people in the image.`;
   
-  // Fixed: Using gemini-2.5-flash-image for standard image generation tasks
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
     contents: {
@@ -96,7 +96,6 @@ export const generateRecipeImage = async (recipeName: string, description: strin
     }
   });
 
-  // Fixed: Iterating through parts to correctly identify and extract inline image data
   if (response && response.candidates && response.candidates.length > 0) {
     const candidate = response.candidates[0];
     if (candidate.content && candidate.content.parts) {
@@ -106,7 +105,12 @@ export const generateRecipeImage = async (recipeName: string, description: strin
         }
       }
     }
+    
+    // Safety check: if finished but no image, it might be a block
+    if (candidate.finishReason === 'SAFETY') {
+      console.warn(`Image generation for ${recipeName} was blocked by safety filters.`);
+    }
   }
   
-  throw new Error("Failed to generate image");
+  throw new Error("Failed to extract image data from response.");
 };
