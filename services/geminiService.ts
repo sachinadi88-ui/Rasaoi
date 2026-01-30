@@ -64,13 +64,13 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
     },
   });
 
-  const text = response.text;
-  if (!text) {
+  const responseText = response.text;
+  if (!responseText) {
     throw new Error("The chef didn't return a recipe. Please try again.");
   }
 
   try {
-    const data = JSON.parse(text.trim());
+    const data = JSON.parse(responseText.trim());
     return data as RecipeResponse;
   } catch (error) {
     console.error("Failed to parse Gemini response:", error);
@@ -93,9 +93,9 @@ export const generateRecipeImage = async (recipeName: string, description: strin
     }
   });
 
-  const candidate = response.candidates?.[0];
-  if (candidate?.content?.parts) {
-    for (const part of candidate.content.parts) {
+  const candidates = response.candidates;
+  if (candidates && candidates.length > 0 && candidates[0].content && candidates[0].content.parts) {
+    for (const part of candidates[0].content.parts) {
       if (part.inlineData) {
         return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
       }
