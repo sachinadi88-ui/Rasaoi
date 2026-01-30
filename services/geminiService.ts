@@ -3,7 +3,7 @@ import { RecipeResponse } from "../types";
 
 export const generateLeftoverRecipes = async (leftovers: string[]): Promise<RecipeResponse> => {
   // Always initialize with the latest available key from process.env
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
   const prompt = `I have the following leftover food items: ${leftovers.join(", ")}. 
   Please suggest 3 authentic and creative Indian recipes that primarily use these leftovers. 
@@ -78,10 +78,11 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
 };
 
 export const generateRecipeImage = async (recipeName: string, description: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
   // Safety-optimized, highly descriptive food photography prompt
-  const prompt = `Gourmet food photography of the Indian dish "${recipeName}". ${description}. Beautifully plated on a rustic Indian plate, natural soft window lighting, cinematic depth of field, vibrant colors, 4k resolution.`;
+  // Using gemini-2.5-flash-image which is the standard free-tier image model
+  const prompt = `Delicious Indian dish: "${recipeName}". ${description}. Professional food photography, plated on traditional Indian tableware, warm natural lighting, high resolution.`;
   
   try {
     const response = await ai.models.generateContent({
@@ -102,9 +103,9 @@ export const generateRecipeImage = async (recipeName: string, description: strin
 
     const candidate = response.candidates[0];
     
-    // Check for safety blocks which are common in production environments
+    // Check for safety blocks
     if (candidate.finishReason === 'SAFETY') {
-      console.warn(`Safety block triggered for recipe: ${recipeName}`);
+      console.warn(`Safety block triggered for: ${recipeName}`);
       throw new Error("Safety filters blocked the image.");
     }
 
@@ -117,7 +118,7 @@ export const generateRecipeImage = async (recipeName: string, description: strin
       }
     }
     
-    throw new Error("No image data found in candidate parts.");
+    throw new Error("No image data found in response.");
   } catch (err) {
     console.error(`Image generation error for ${recipeName}:`, err);
     throw err;
