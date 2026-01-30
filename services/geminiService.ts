@@ -2,8 +2,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { RecipeResponse } from "../types";
 
 export const generateLeftoverRecipes = async (leftovers: string[]): Promise<RecipeResponse> => {
-  // Use a fresh instance with the latest key
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  // Always initialize with the latest available key from process.env
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
 
   const prompt = `I have the following leftover food items: ${leftovers.join(", ")}. 
   Please suggest 3 authentic and creative Indian recipes that primarily use these leftovers. 
@@ -66,7 +66,7 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
 
   const responseText = response.text;
   if (!responseText) {
-    throw new Error("The chef didn't return any recipes. Please check your connection.");
+    throw new Error("The chef didn't return any recipes. Please try again.");
   }
 
   try {
@@ -74,15 +74,15 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
     return data as RecipeResponse;
   } catch (error) {
     console.error("Failed to parse Gemini response:", error);
-    throw new Error("The chef had trouble formatting the recipes. Please try again.");
+    throw new Error("Formatting error in the recipes. Please try again.");
   }
 };
 
 export const generateRecipeImage = async (recipeName: string, description: string): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || "" });
 
-  // Safety-optimized prompt for Indian food photography
-  const prompt = `Macro food photography of an authentic Indian dish: "${recipeName}". ${description}. Plated on traditional Indian copper or ceramic dish, warm ambient lighting, garnish with fresh herbs. High resolution, 4k, appetizing textures. No human hands, no text.`;
+  // Simplified prompt to avoid safety filter triggers while maintaining descriptive quality
+  const prompt = `A professional food photography shot of the Indian dish "${recipeName}". ${description}. High quality, appetizing, served on traditional Indian tableware, warm lighting.`;
   
   try {
     const response = await ai.models.generateContent({
@@ -101,8 +101,8 @@ export const generateRecipeImage = async (recipeName: string, description: strin
       const candidate = response.candidates[0];
       
       if (candidate.finishReason === 'SAFETY') {
-        console.warn(`Image for ${recipeName} blocked by safety filters.`);
-        throw new Error("Safety block");
+        console.warn(`Image generation for ${recipeName} was blocked by safety filters.`);
+        throw new Error("Safety Block");
       }
 
       if (candidate.content && candidate.content.parts) {
@@ -114,9 +114,9 @@ export const generateRecipeImage = async (recipeName: string, description: strin
       }
     }
   } catch (err) {
-    console.error(`Error generating image for ${recipeName}:`, err);
+    console.error(`Error in generateRecipeImage for ${recipeName}:`, err);
     throw err;
   }
   
-  throw new Error("No image data found in response.");
+  throw new Error("No image data returned from the model.");
 };
