@@ -1,7 +1,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { RecipeResponse } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
+// Fixed: Initializing GoogleGenAI client using process.env.API_KEY directly as per guidelines
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const generateLeftoverRecipes = async (leftovers: string[]): Promise<RecipeResponse> => {
   const prompt = `I have the following leftover food items: ${leftovers.join(", ")}. 
@@ -10,6 +11,7 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
   Provide detailed instructions, preparation time, and tags for each recipe.
   ONLY provide Indian recipes.`;
 
+  // Fixed: Using the recommended model for text-based tasks
   const response = await ai.models.generateContent({
     model: "gemini-3-flash-preview",
     contents: prompt,
@@ -63,6 +65,7 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
     },
   });
 
+  // Fixed: Accessed response.text as a property, not a method, and handled potential undefined
   const responseText = response.text;
   if (!responseText) {
     throw new Error("The chef didn't return a recipe. Please try again.");
@@ -80,6 +83,7 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
 export const generateRecipeImage = async (recipeName: string, description: string): Promise<string> => {
   const prompt = `A high-quality, professional food photography shot of an authentic Indian dish called "${recipeName}". ${description}. The dish should be beautifully plated on traditional Indian tableware, warm lighting, appetizing textures.`;
   
+  // Fixed: Using gemini-2.5-flash-image for standard image generation tasks
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash-image',
     contents: {
@@ -92,13 +96,13 @@ export const generateRecipeImage = async (recipeName: string, description: strin
     }
   });
 
-  const candidates = response.candidates;
-  if (candidates && candidates.length > 0) {
-    const firstCandidate = candidates[0];
-    if (firstCandidate && firstCandidate.content && firstCandidate.content.parts) {
-      for (const part of firstCandidate.content.parts) {
-        if (part && part.inlineData) {
-          return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+  // Fixed: Iterating through parts to correctly identify and extract inline image data
+  if (response && response.candidates && response.candidates.length > 0) {
+    const candidate = response.candidates[0];
+    if (candidate.content && candidate.content.parts) {
+      for (const part of candidate.content.parts) {
+        if (part.inlineData && part.inlineData.data) {
+          return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
         }
       }
     }

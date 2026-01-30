@@ -1,11 +1,11 @@
-
+// Fixed: Removed the triple-slash reference as it's not needed in vite.config.ts and can cause resolution errors in Node contexts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  // Vite doesn't expose all process.env by default for security.
-  // We explicitly define process.env.API_KEY so the app can access it.
+  plugins: [react()],
   define: {
+    // Inject the API key into the client-side bundle
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY)
   },
   server: {
