@@ -2,7 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { RecipeResponse } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
 export const generateLeftoverRecipes = async (leftovers: string[]): Promise<RecipeResponse> => {
   const prompt = `I have the following leftover food items: ${leftovers.join(", ")}. 
@@ -64,12 +64,17 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
     },
   });
 
+  const text = response.text;
+  if (!text) {
+    throw new Error("The chef didn't return a recipe. Please try again.");
+  }
+
   try {
-    const data = JSON.parse(response.text.trim());
+    const data = JSON.parse(text.trim());
     return data as RecipeResponse;
   } catch (error) {
     console.error("Failed to parse Gemini response:", error);
-    throw new Error("The chef had trouble with the recipe. Please try again.");
+    throw new Error("The chef had trouble writing down the recipe. Please try again.");
   }
 };
 
@@ -88,9 +93,12 @@ export const generateRecipeImage = async (recipeName: string, description: strin
     }
   });
 
-  for (const part of response.candidates[0].content.parts) {
-    if (part.inlineData) {
-      return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+  const candidate = response.candidates?.[0];
+  if (candidate?.content?.parts) {
+    for (const part of candidate.content.parts) {
+      if (part.inlineData) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
     }
   }
   
