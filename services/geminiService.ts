@@ -2,8 +2,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { RecipeResponse } from "../types";
 
 export const generateLeftoverRecipes = async (leftovers: string[]): Promise<RecipeResponse> => {
-  const apiKey = process.env.API_KEY || "";
-  const ai = new GoogleGenAI({ apiKey });
+  // Use a fresh instance with the latest key
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
   const prompt = `I have the following leftover food items: ${leftovers.join(", ")}. 
   Please suggest 3 authentic and creative Indian recipes that primarily use these leftovers. 
@@ -66,7 +66,7 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
 
   const responseText = response.text;
   if (!responseText) {
-    throw new Error("The chef didn't return a recipe. Please try again.");
+    throw new Error("The chef didn't return any recipes. Please check your connection.");
   }
 
   try {
@@ -74,43 +74,49 @@ export const generateLeftoverRecipes = async (leftovers: string[]): Promise<Reci
     return data as RecipeResponse;
   } catch (error) {
     console.error("Failed to parse Gemini response:", error);
-    throw new Error("The chef had trouble writing down the recipe. Please try again.");
+    throw new Error("The chef had trouble formatting the recipes. Please try again.");
   }
 };
 
 export const generateRecipeImage = async (recipeName: string, description: string): Promise<string> => {
-  const apiKey = process.env.API_KEY || "";
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
 
-  const prompt = `A high-quality, professional food photography shot of an authentic Indian dish called "${recipeName}". ${description}. The dish should be beautifully plated on traditional Indian tableware, warm lighting, appetizing textures. No text or people in the image.`;
+  // Safety-optimized prompt for Indian food photography
+  const prompt = `Macro food photography of an authentic Indian dish: "${recipeName}". ${description}. Plated on traditional Indian copper or ceramic dish, warm ambient lighting, garnish with fresh herbs. High resolution, 4k, appetizing textures. No human hands, no text.`;
   
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash-image',
-    contents: {
-      parts: [{ text: prompt }],
-    },
-    config: {
-      imageConfig: {
-        aspectRatio: "4:3"
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: {
+        parts: [{ text: prompt }],
+      },
+      config: {
+        imageConfig: {
+          aspectRatio: "4:3"
+        }
       }
-    }
-  });
+    });
 
-  if (response && response.candidates && response.candidates.length > 0) {
-    const candidate = response.candidates[0];
-    if (candidate.content && candidate.content.parts) {
-      for (const part of candidate.content.parts) {
-        if (part.inlineData && part.inlineData.data) {
-          return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+    if (response && response.candidates && response.candidates.length > 0) {
+      const candidate = response.candidates[0];
+      
+      if (candidate.finishReason === 'SAFETY') {
+        console.warn(`Image for ${recipeName} blocked by safety filters.`);
+        throw new Error("Safety block");
+      }
+
+      if (candidate.content && candidate.content.parts) {
+        for (const part of candidate.content.parts) {
+          if (part.inlineData && part.inlineData.data) {
+            return `data:${part.inlineData.mimeType || 'image/png'};base64,${part.inlineData.data}`;
+          }
         }
       }
     }
-    
-    // Safety check: if finished but no image, it might be a block
-    if (candidate.finishReason === 'SAFETY') {
-      console.warn(`Image generation for ${recipeName} was blocked by safety filters.`);
-    }
+  } catch (err) {
+    console.error(`Error generating image for ${recipeName}:`, err);
+    throw err;
   }
   
-  throw new Error("Failed to extract image data from response.");
+  throw new Error("No image data found in response.");
 };
